@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "form_entries",
+  "info": {
+    "singularName": "form-entry",
+    "pluralName": "form-entries",
+    "displayName": "Form Entries",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Form": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::form.form"
+    },
+    "Data": {
+      "type": "richtext"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "strapi-aws-base",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A Strapi application",
+  "scripts": {
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "build": "strapi build",
+    "strapi": "strapi",
+    "tunnel": "env-cmd -x ssh -N -L \\$DATABASE_PORT:\\$DATABASE_TUNNELED_HOST:\\$DATABASE_PORT ubuntu@\\$AWS_INSTANCE_IP -i \\$AWS_KEYFILE_PATH",
+    "ssh": "env-cmd -x ssh ubuntu@\\$AWS_INSTANCE_IP -i \\$AWS_KEYFILE_PATH",
+    "live-to-dev": "env-cmd sh scripts/db-live-to-dev.sh",
+    "WARN__dev-to-live": "env-cmd sh scripts/WARNING_dev-to-live.sh"
+  },
+  "dependencies": {
+    "@strapi/plugin-graphql": "^4.1.8",
+    "@strapi/plugin-i18n": "4.1.8",
+    "@strapi/plugin-seo": "^1.7.2",
+    "@strapi/plugin-users-permissions": "4.1.8",
+    "@strapi/provider-email-sendgrid": "^4.1.8",
+    "@strapi/provider-upload-aws-cloudfront": "file:providers/upload-aws-cloudfront",
+    "@strapi/strapi": "4.1.8",
+    "better-sqlite3": "7.4.6",
+    "markdown-it": "^12.3.2",
+    "pg": "^8.7.3"
+  },
+  "author": {
+    "name": "A Strapi developer"
+  },
+  "strapi": {
+    "uuid": "901fece5-0d05-4305-abc0-f10fffd086ba"
+  },
+  "workspaces": [
+    "src/plugins/*",
+    "providers/*"
+  ],
+  "engines": {
+    "node": ">=12.x.x <=16.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT",
+  "packageManager": "yarn@3.2.0",
+  "devDependencies": {
+    "env-cmd": "^10.1.0"
+  }
+}

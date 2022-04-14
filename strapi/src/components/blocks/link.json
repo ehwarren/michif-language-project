@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_blocks_links",
+  "info": {
+    "displayName": "Link",
+    "icon": "link"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Url": {
+      "type": "string"
+    },
+    "NewWindow": {
+      "type": "boolean"
+    }
+  }
+}

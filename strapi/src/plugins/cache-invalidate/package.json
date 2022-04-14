@@ -1,0 +1,27 @@
+{
+    "name": "cache-invalidate",
+    "version": "0.0.1",
+    "description": "Plugin to invalidate Cloudfront cache on admin request",
+    "strapi": {
+        "name": "Cache Utils",
+        "description": "Plugin to invalidate Cloudfront cache on admin request",
+        "kind": "plugin"
+    },
+    "dependencies": {
+        "@aws-sdk/client-cloudfront": "^3.67.0",
+        "@strapi/icons": "0.0.1-alpha.79"
+    },
+    "author": {
+        "name": "Bluegrove Technologies Ltd."
+    },
+    "maintainers": [
+        {
+            "name": "Bluegrove Technologies Ltd."
+        }
+    ],
+    "engines": {
+        "node": ">=12.x.x <=16.x.x",
+        "npm": ">=6.0.0"
+    },
+    "license": "MIT"
+}

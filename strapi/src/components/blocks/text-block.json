@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_blocks_text_blocks",
+  "info": {
+    "displayName": "TextBlock",
+    "icon": "pencil-alt"
+  },
+  "options": {},
+  "attributes": {
+    "Content": {
+      "type": "richtext"
+    }
+  }
+}

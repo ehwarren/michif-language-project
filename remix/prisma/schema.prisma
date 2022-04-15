@@ -1,0 +1,90 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("PRISMA_DATABASE_URL")
+}
+
+model EnglishWord {
+    id          Int                 @id @default(autoincrement())
+    word        String
+    definitions EnglishDefinition[]
+}
+
+model EnglishDefinition {
+    id            Int          @id @default(autoincrement())
+    partOfSpeech  PartOfSpeech
+    definition    String
+    EnglishWord   EnglishWord  @relation(fields: [englishWordId], references: [id])
+    englishWordId Int
+    MichifWords   MichifWord[]
+}
+
+model Variant {
+    id      Int         @id @default(autoincrement())
+    type    VariantType
+    variant String
+
+    MichifWord   MichifWord? @relation(fields: [michifWordId], references: [id])
+    michifWordId Int?
+}
+
+model MichifWord {
+    id                 Int     @id @default(autoincrement())
+    Word               String
+    alternateSpellings String?
+    phonetic           String?
+    image              String?
+
+    Variants            Variant[]
+    ExampleSentences    ExampleSentence[]
+    RelatedWords        MichifWord[]        @relation(name: "RelatedWords")
+    WordsRelatedTo      MichifWord[]        @relation(name: "RelatedWords")
+    EnglishTranslations EnglishDefinition[]
+    Categories          Category[]
+    Sounds              Sound[]
+}
+
+model Sound {
+    id       Int    @id @default(autoincrement())
+    embedURL String
+
+    StoryTeller   StoryTeller @relation(fields: [storyTellerId], references: [id])
+    storyTellerId Int
+    MichifWord    MichifWord? @relation(fields: [michifWordId], references: [id])
+    michifWordId  Int?
+}
+
+model StoryTeller {
+    id    Int     @id @default(autoincrement())
+    name  String
+    Sound Sound[]
+}
+
+model ExampleSentence {
+    id           Int         @id @default(autoincrement())
+    michif       String
+    english      String
+    MichifWord   MichifWord? @relation(fields: [michifWordId], references: [id])
+    michifWordId Int?
+}
+
+model Category {
+    id          Int          @id @default(autoincrement())
+    title       String
+    MichifWords MichifWord[]
+}
+
+enum PartOfSpeech {
+    Noun
+    Pronoun
+    Verb
+}
+
+enum VariantType {
+    Plural
+    Past
+    Present
+}

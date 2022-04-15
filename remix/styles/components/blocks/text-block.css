@@ -1,0 +1,10 @@
+@layer components {
+    div.text-block {
+        p {
+            @apply my-3
+        }
+        img {
+            @apply mx-auto my-6 w-full max-h-[50vh] object-cover
+        }
+    }
+}

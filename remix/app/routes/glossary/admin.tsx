@@ -1,6 +1,6 @@
 import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
-import { Form, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { EnglishWord, EnglishDefinition, MichifWord, PartOfSpeech } from "@prisma/client";
 
 import { Button } from "@mui/material";
@@ -14,12 +14,11 @@ type Word = (EnglishWord & {
 })[];
 
 export const loader: LoaderFunction = async () => {
-    return await prisma.englishWord.findMany({});
+    return await prisma.englishWord.findMany({ orderBy: { word: "asc" } });
 };
 
 export const action: ActionFunction = async ({ request }) => {
     const body = await request.formData();
-    console.log(body);
     const english = body.get("english");
     const definition = body.get("definition");
     const michif = body.get("michif");
@@ -51,24 +50,27 @@ export const action: ActionFunction = async ({ request }) => {
 export default function Index() {
     const englishWords = useLoaderData<EnglishWord[]>();
     return (
-        <div className="container mx-auto mt-8">
+        <div className="container mx-auto mt-8 flex flex-col">
             <div className="flex justify-between">
                 <h2>Welcome to glossary admin</h2>
-                <Button variant="outlined" color="primary">
-                    Add Word
-                </Button>
+                <Link to="/glossary/admin/new">
+                    <Button variant="outlined" color="primary">
+                        Add Word
+                    </Button>
+                </Link>
             </div>
-
-            <div className="grid grid-cols-12">
-                <ul className="col-span-2">
-                    {englishWords.map((n) => (
-                        <li key={n.id}>
-                            <NavLink to={`/glossary/admin/${n.id}`}>{n.word}</NavLink>
-                        </li>
-                    ))}
-                </ul>
-                <div className="col-span-10">
-                    <Outlet />
+            <div className="flex-grow">
+                <div className="grid grid-cols-12 h-full">
+                    <ul className="col-span-2">
+                        {englishWords.map((n) => (
+                            <li key={n.id}>
+                                <NavLink to={`/glossary/admin/${n.id}`} className={({isActive}) => isActive ? 'underline' : ''}>{n.word}</NavLink>
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="col-span-10">
+                        <Outlet />
+                    </div>
                 </div>
             </div>
         </div>

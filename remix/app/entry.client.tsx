@@ -6,6 +6,7 @@ import { CacheProvider } from "@emotion/react";
 import { useState } from "react";
 //@ts-ignore
 import theme from "./utils/theme";
+import { ConfirmContextProvider } from "./utils/context/ConfirmContext";
 
 interface ClientCacheProviderProps {
     children: React.ReactNode;
@@ -13,7 +14,9 @@ interface ClientCacheProviderProps {
 
 hydrate(
     <ThemeProvider theme={theme}>
-        <RemixBrowser />
+        <ConfirmContextProvider>
+            <RemixBrowser />
+        </ConfirmContextProvider>
     </ThemeProvider>,
     document
 );

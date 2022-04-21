@@ -17,7 +17,7 @@ model EnglishDefinition {
     id            Int          @id @default(autoincrement())
     partOfSpeech  PartOfSpeech
     definition    String
-    EnglishWord   EnglishWord  @relation(fields: [englishWordId], references: [id])
+    EnglishWord   EnglishWord  @relation(fields: [englishWordId], references: [id], onDelete: Cascade)
     englishWordId Int
     MichifWords   MichifWord[]
 }

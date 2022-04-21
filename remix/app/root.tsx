@@ -59,7 +59,7 @@ export default function App() {
                     onMenuToggle={handleMenuToggled}
                     logo={siteAsset?.data?.attributes?.Logo?.data?.attributes || undefined}
                 />
-                <div className="flex-grow">
+                <div className="flex-grow flex">
                     <Outlet />
                 </div>
                 {footer && <Footer data={footer} />}

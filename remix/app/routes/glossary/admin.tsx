@@ -3,6 +3,8 @@ import { prisma } from "~/utils/prisma.server";
 import { Form, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { EnglishWord, EnglishDefinition, MichifWord, PartOfSpeech } from "@prisma/client";
 
+import { Button } from "@mui/material";
+
 type Word = (EnglishWord & {
     definitions: (EnglishDefinition & {
         MichifWords: (MichifWord & {
@@ -50,7 +52,13 @@ export default function Index() {
     const englishWords = useLoaderData<EnglishWord[]>();
     return (
         <div className="container mx-auto mt-8">
-            <h2>Welcome to glossary admin</h2>
+            <div className="flex justify-between">
+                <h2>Welcome to glossary admin</h2>
+                <Button variant="outlined" color="primary">
+                    Add Word
+                </Button>
+            </div>
+
             <div className="grid grid-cols-12">
                 <ul className="col-span-2">
                     {englishWords.map((n) => (

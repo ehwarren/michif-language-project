@@ -1,5 +1,5 @@
 import { Button, TextField } from "@mui/material";
-import { ActionFunction } from "@remix-run/node";
+import { ActionFunction, redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { prisma } from "~/utils/prisma.server";
 
@@ -9,7 +9,7 @@ export const action: ActionFunction = async ({ request }) => {
     const word = body.get("word");
     if (word && typeof word === "string") {
         const newWord = await prisma.englishWord.create({ data: { word } });
-        return newWord;
+        return redirect('/glossary/admin/'+newWord.id);
     }
     return null;
 };

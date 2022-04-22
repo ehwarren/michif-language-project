@@ -1,9 +1,19 @@
 import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import { EnglishWord, EnglishDefinition, MichifWord, PartOfSpeech } from "@prisma/client";
+import {
+    EnglishWord,
+    EnglishDefinition,
+    MichifWord,
+    PartOfSpeech,
+} from "@prisma/client";
 
-import { Button } from "@mui/material";
+import {
+    Button,
+} from "@mui/material";
+
+import { MichifWordsContextProvider } from "~/utils/context/MichifWordContext";
+import WordSidebar from "~/components/admin/WordSidebar";
 
 type Word = (EnglishWord & {
     definitions: (EnglishDefinition & {
@@ -13,46 +23,26 @@ type Word = (EnglishWord & {
     })[];
 })[];
 
-export const loader: LoaderFunction = async () => {
-    return await prisma.englishWord.findMany({ orderBy: { word: "asc" } });
+type AdminData = {
+    englishWords: EnglishWord[];
+    michifWords: MichifWord[];
 };
-
-export const action: ActionFunction = async ({ request }) => {
-    const body = await request.formData();
-    const english = body.get("english");
-    const definition = body.get("definition");
-    const michif = body.get("michif");
-
-    if (typeof english !== "string" || typeof definition !== "string" || typeof michif !== "string") {
-        return json({ formError: "Form missing data..." });
-    }
-
-    const word = await prisma.englishWord.create({
-        data: {
-            word: english,
-            definitions: {
-                create: {
-                    definition,
-                    partOfSpeech: PartOfSpeech.Noun,
-                    MichifWords: {
-                        create: {
-                            Word: michif,
-                        },
-                    },
-                },
-            },
-        },
-    });
-
-    return null;
+export const loader: LoaderFunction = async (): Promise<AdminData> => {
+    return {
+        englishWords: await prisma.englishWord.findMany({
+            orderBy: { word: "asc" },
+        }),
+        michifWords: await prisma.michifWord.findMany({}),
+    };
 };
 
 export default function Index() {
-    const englishWords = useLoaderData<EnglishWord[]>();
+    const { englishWords, michifWords } = useLoaderData<AdminData>();
+
+
     return (
-        <div className="container mx-auto mt-8 flex flex-col">
+        <div className="mt-8 flex flex-col w-full">
             <div className="flex justify-between">
-                <h2>Welcome to glossary admin</h2>
                 <Link to="/glossary/admin/new">
                     <Button variant="outlined" color="primary">
                         Add Word
@@ -61,15 +51,13 @@ export default function Index() {
             </div>
             <div className="flex-grow">
                 <div className="grid grid-cols-12 h-full">
-                    <ul className="col-span-2">
-                        {englishWords.map((n) => (
-                            <li key={n.id}>
-                                <NavLink to={`/glossary/admin/${n.id}`} className={({isActive}) => isActive ? 'underline' : ''}>{n.word}</NavLink>
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="col-span-10">
-                        <Outlet />
+                    <div className="col-span-2 border-r-primary-500/20 border-[1px]">
+                        <WordSidebar englishWords={englishWords} />
+                    </div>
+                    <div className="col-span-10 ml-4">
+                        <MichifWordsContextProvider words={michifWords}>
+                            <Outlet />
+                        </MichifWordsContextProvider>
                     </div>
                 </div>
             </div>

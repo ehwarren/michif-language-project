@@ -8,72 +8,46 @@ datasource db {
 }
 
 model EnglishWord {
-    id          Int                 @id @default(autoincrement())
-    word        String
-    definitions EnglishDefinition[]
-}
+    id   Int    @id @default(autoincrement())
+    word String @unique
 
-model EnglishDefinition {
-    id            Int          @id @default(autoincrement())
-    partOfSpeech  PartOfSpeech
-    definition    String
-    EnglishWord   EnglishWord  @relation(fields: [englishWordId], references: [id], onDelete: Cascade)
-    englishWordId Int
-    MichifWords   MichifWord[]
-}
 
-model Variant {
-    id      Int         @id @default(autoincrement())
-    type    VariantType
-    variant String
-
-    MichifWord   MichifWord? @relation(fields: [michifWordId], references: [id])
-    michifWordId Int?
+    MichifWords    MichifWord[]
+    RelatedWords   EnglishWord[] @relation(name: "RelatedWords")
+    WordsRelatedTo EnglishWord[] @relation(name: "RelatedWords")
 }
 
 model MichifWord {
-    id                 Int     @id @default(autoincrement())
-    Word               String
-    alternateSpellings String?
-    phonetic           String?
-    image              String?
+    id                     Int     @id @default(autoincrement())
+    word                   String
+    phonetic               String?
+    image                  String?
+    exampleSentenceMichif  String?
+    exampleSentenceEnglish String?
+    Note                   String?
+    registrarId            Int?
 
-    Variants            Variant[]
-    ExampleSentences    ExampleSentence[]
-    RelatedWords        MichifWord[]        @relation(name: "RelatedWords")
-    WordsRelatedTo      MichifWord[]        @relation(name: "RelatedWords")
-    EnglishTranslations EnglishDefinition[]
-    Categories          Category[]
-    Sounds              Sound[]
+    soundEmbedUrl String?
+    soundDate     DateTime?
+    soundLocation String?
+    soundSpeaker  String?
+
+    PartOfSpeech  PartOfSpeech
+    Categories    Category[]
+    Registrar     Registrar?   @relation(fields: [registrarId], references: [id])
+    EnglishWord   EnglishWord? @relation(fields: [englishWordId], references: [id])
+    englishWordId Int?
 }
 
-model Sound {
-    id       Int    @id @default(autoincrement())
-    embedURL String
-
-    StoryTeller   StoryTeller @relation(fields: [storyTellerId], references: [id])
-    storyTellerId Int
-    MichifWord    MichifWord? @relation(fields: [michifWordId], references: [id])
-    michifWordId  Int?
-}
-
-model StoryTeller {
-    id    Int     @id @default(autoincrement())
-    name  String
-    Sound Sound[]
-}
-
-model ExampleSentence {
-    id           Int         @id @default(autoincrement())
-    michif       String
-    english      String
-    MichifWord   MichifWord? @relation(fields: [michifWordId], references: [id])
-    michifWordId Int?
+model Registrar {
+    id         Int          @id @default(autoincrement())
+    name       String
+    MichifWord MichifWord[]
 }
 
 model Category {
     id          Int          @id @default(autoincrement())
-    title       String
+    title       String       @unique
     MichifWords MichifWord[]
 }
 

@@ -9,15 +9,17 @@ import { useState } from "react";
 import { CatchBoundaryComponent } from "@remix-run/react/routeModules";
 import { rootQuery, rootQuery_mainMenu_data_attributes } from "./utils/queries/rootQuery/__generated__/rootQuery";
 import Footer from "~/components/footer";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 
 export function links() {
     return [
         { rel: "stylesheet", href: styles },
-        { rel: "apple-touch-icon", sizes: "180x180",  href: "/apple-touch-icon.png"},
-        { rel: "icon", sizes: "32x32",  href: "/favicon-32x32.png"},
-        { rel: "icon", sizes: "16x16",  href: "/favicon-16x16.png"},
-        { rel: "manifest", href: "/site.webmanifest"},
-        { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#0d4c9d"},
+        { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+        { rel: "icon", sizes: "32x32", href: "/favicon-32x32.png" },
+        { rel: "icon", sizes: "16x16", href: "/favicon-16x16.png" },
+        { rel: "manifest", href: "/site.webmanifest" },
+        { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#0d4c9d" },
     ];
 }
 
@@ -60,7 +62,9 @@ export default function App() {
                     logo={siteAsset?.data?.attributes?.Logo?.data?.attributes || undefined}
                 />
                 <div className="flex-grow flex">
-                    <Outlet />
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <Outlet />
+                    </LocalizationProvider>
                 </div>
                 {footer && <Footer data={footer} />}
                 <ScrollRestoration />

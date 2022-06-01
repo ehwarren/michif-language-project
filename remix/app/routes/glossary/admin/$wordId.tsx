@@ -1,54 +1,24 @@
-import {
-    ActionFunction,
-    json,
-    LoaderFunction,
-    redirect,
-} from "@remix-run/node";
+import { ActionFunction, json, LoaderFunction, redirect } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
-import {
-    Form,
-    NavLink,
-    Outlet,
-    ThrownResponse,
-    useLoaderData,
-    useSubmit,
-} from "@remix-run/react";
-import {
-    EnglishWord,
-    EnglishDefinition,
-    MichifWord,
-    PartOfSpeech,
-    ExampleSentence,
-} from "@prisma/client";
+import { Form, NavLink, Outlet, ThrownResponse, useLoaderData, useMatches, useSubmit } from "@remix-run/react";
+import { Category, EnglishWord, MichifWord, PartOfSpeech } from "@prisma/client";
 import React, { useEffect, useState } from "react";
-import {
-    Autocomplete,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    MenuItem,
-    Paper,
-    TextField,
-} from "@mui/material";
+import { Autocomplete, Button, Card, CardContent, CardHeader, createFilterOptions, MenuItem, Paper, TextField } from "@mui/material";
 import newWord from "./new";
 import { useConfirmDialog } from "~/utils/context/ConfirmContext";
 import { useMichifWords } from "~/utils/context/MichifWordContext";
+import { CasinoSharp } from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers";
 
-type EnglishWordExt = EnglishWord & {
-    definitions: (Partial<EnglishDefinition> & {
-        MichifWords: (Partial<MichifWord> & {
-            ExampleSentences?: ExampleSentence[];
-            RelatedWords?: MichifWord[];
-            WordsRelatedTo?:  MichifWord[];
-        })[];
-    })[];
+type MichifWordExt = MichifWord & {
+    Categories?: Category[];
 };
 
-type MichifWordDetailed = (MichifWord & {
-    ExampleSentences?: ExampleSentence[]
-    RelatedWords?: MichifWord[]
-})
+type EnglishWordExt = EnglishWord & {
+    RelatedWords: EnglishWord[];
+    WordsRelatedTo: EnglishWord[];
+    MichifWords: Partial<MichifWordExt>[];
+};
 
 export type WordNotFoundResponse = ThrownResponse<404, string>;
 
@@ -56,25 +26,19 @@ type WordData = {
     englishWord: EnglishWordExt;
 };
 
-export const loader: LoaderFunction = async ({
-    params,
-    context,
-    request,
-}): Promise<WordData> => {
+const filter = createFilterOptions<Category & { inputValue?: string }>();
+
+export const loader: LoaderFunction = async ({ params, context, request }): Promise<WordData> => {
     const wordId = params.wordId && parseInt(params.wordId);
     if (wordId) {
         const word = await prisma.englishWord.findUnique({
             where: { id: wordId },
             include: {
-                definitions: {
+                RelatedWords: true,
+                WordsRelatedTo: true,
+                MichifWords: {
                     include: {
-                        MichifWords: {
-                            include: {
-                                ExampleSentences: true,
-                                RelatedWords: true,
-                                WordsRelatedTo: true
-                            },
-                        },
+                        Categories: true,
                     },
                 },
             },
@@ -109,66 +73,71 @@ export const action: ActionFunction = async ({ request, params }) => {
     if (data && typeof data === "string") {
         const word: EnglishWordExt = JSON.parse(data);
 
-        for (const definition of word.definitions) {
-            let definitionId = definition.id;
-            if (definitionId) {
-                await prisma.englishDefinition.update({
+        for (const michif of word.MichifWords) {
+            // Lets create any categories that are selected but don't exist yet
+            if (michif.id) {
+                //clear all related categories so we can update them below
+                const cleared = await prisma.michifWord.update({
                     data: {
-                        definition: definition.definition,
-                        partOfSpeech: definition.partOfSpeech,
+                        Categories: {
+                            set: [],
+                        },
                     },
                     where: {
-                        id: definitionId,
+                        id: michif.id,
+                    },
+                });
+                const d = await prisma.michifWord.update({
+                    data: {
+                        word: michif.word,
+                        PartOfSpeech: michif.PartOfSpeech,
+                        exampleSentenceEnglish: michif.exampleSentenceEnglish || "",
+                        exampleSentenceMichif: michif.exampleSentenceMichif || "",
+                        phonetic: michif.phonetic || "",
+                        soundDate: michif.soundDate,
+                        soundLocation: michif.soundLocation,
+                        soundEmbedUrl: michif.soundEmbedUrl,
+                        soundSpeaker: michif.soundSpeaker,
+                        Categories: {
+                            connectOrCreate: michif.Categories?.map((n) => ({
+                                where: {
+                                    title: n.title,
+                                },
+                                create: {
+                                    title: n.title,
+                                },
+                            })),
+                        },
+                    },
+                    where: {
+                        id: michif.id,
                     },
                 });
             } else {
-                let createdDefinition = await prisma.englishDefinition.create({
+                const d = await prisma.michifWord.create({
                     data: {
-                        definition: definition.definition || "",
-                        englishWordId: word.id,
-                        partOfSpeech: definition.partOfSpeech || PartOfSpeech.Noun,
+                        word: michif.word || "",
+                        phonetic: michif.phonetic || "",
+                        PartOfSpeech: michif.PartOfSpeech || PartOfSpeech.Noun,
+                        exampleSentenceEnglish: michif.exampleSentenceEnglish || "",
+                        exampleSentenceMichif: michif.exampleSentenceMichif || "",
+                        EnglishWord: {
+                            connect: {
+                                id: word.id,
+                            },
+                        },
+                        Categories: {
+                            connectOrCreate: michif.Categories?.map((n) => ({
+                                where: {
+                                    title: n.title,
+                                },
+                                create: {
+                                    title: n.title,
+                                },
+                            })),
+                        },
                     },
                 });
-                definitionId = createdDefinition.id;
-            }
-
-            for (const michif of definition.MichifWords) {
-                if (michif.id) {
-                    const d = await prisma.michifWord.update({
-                        data: {
-                            Word: michif.Word,
-                            alternateSpellings: michif.alternateSpellings,
-                            phonetic: michif.phonetic,
-                            EnglishTranslations: {
-                                connect: {
-                                    id: definitionId,
-                                },
-                            },
-                            RelatedWords: {
-                                set: michif.RelatedWords?.map(n => ({id: n.id})) || []
-                            }
-                        },
-                        where: {
-                            id: michif.id,
-                        },
-                    });
-                } else {
-                    const d = await prisma.michifWord.create({
-                        data: {
-                            Word: michif.Word || "",
-                            alternateSpellings: michif.alternateSpellings,
-                            phonetic: michif.phonetic,
-                            EnglishTranslations: {
-                                connect: {
-                                    id: definitionId,
-                                },
-                            },
-                            RelatedWords: {
-                                connect: michif.RelatedWords?.map(n => ({id: n.id})) || []
-                            }
-                        },
-                    });
-                }
             }
         }
 
@@ -191,73 +160,53 @@ export default function Index() {
     const [englishWord, setEnglishWord] = useState<EnglishWordExt>();
     const prompt = useConfirmDialog();
     const submit = useSubmit();
-    const michifWords = useMichifWords();
+    const matches = useMatches();
 
-    const handleMichifWordChanged = (
-        michif: Partial<MichifWordDetailed>,
-        definitionIndex: number
-    ) => {
+    const [englishWords, setEnglishWords] = useState<EnglishWord[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        const baseData = matches.filter((n) => n.id === "routes/glossary/admin")[0].data;
+        setEnglishWords(baseData.englishWords);
+        setCategories(baseData.categories);
+    }, [matches]);
+
+    const handleMichifWordChanged = (michif: Partial<MichifWordExt>, translationIndex: number) => {
         const d: EnglishWordExt = JSON.parse(JSON.stringify(englishWord));
-        d.definitions[definitionIndex].MichifWords[0] = michif;
+        d.MichifWords[translationIndex] = michif;
         setEnglishWord(d);
     };
 
-    const handleDefinitionChaned = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-        definitionIndex: number
-    ) => {
+    const handleAddTranslation = () => {
         const d: EnglishWordExt = JSON.parse(JSON.stringify(englishWord));
-        d.definitions[definitionIndex].definition = event.target.value;
-        setEnglishWord(d);
-    };
-
-    const handlePartOfSpeechChanged = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-        definitionIndex: number
-    ) => {
-        const d: EnglishWordExt = JSON.parse(JSON.stringify(englishWord));
-        d.definitions[definitionIndex].partOfSpeech = event.target
-            .value as PartOfSpeech;
-        setEnglishWord(d);
-    };
-
-    const handleAddDefinition = () => {
-        const d: EnglishWordExt = JSON.parse(JSON.stringify(englishWord));
-        d.definitions.push({
-            MichifWords: [{ Word: "", alternateSpellings: "", phonetic: "" }],
-        });
+        d.MichifWords.push({ word: "", phonetic: "" });
         setEnglishWord(d);
     };
 
     const handleDeleteWord = (event: React.MouseEvent<HTMLButtonElement>) => {
         const t = event.currentTarget;
-        prompt(
-            "Are you sure?",
-            `You're about to permanently delete the word ${englishWord?.word}.`,
-            () => {
-                submit(t);
-            }
-        );
+        prompt("Are you sure?", `You're about to permanently delete the word ${englishWord?.word}.`, () => {
+            submit(t);
+        });
         event.preventDefault();
+    };
+
+    const handleRelatedWordsChanged = (relatedWords: EnglishWord[]) => {
+        const d: EnglishWordExt = JSON.parse(JSON.stringify(englishWord));
+        d.RelatedWords = relatedWords;
+        setEnglishWord(d);
     };
 
     useEffect(() => {
         setEnglishWord({ ...wordData.englishWord });
     }, [wordData.englishWord]);
 
-    console.log('rerender word');
     return (
         <div className="container mx-auto mt-8 relative">
             {englishWord && (
                 <>
                     <Form method="post">
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            name="action"
-                            value="DELETE"
-                            onClick={handleDeleteWord}
-                        >
+                        <Button variant="outlined" color="error" name="action" value="DELETE" onClick={handleDeleteWord}>
                             Delete Word
                         </Button>
                         <div className="max-w-xs flex flex-col">
@@ -274,155 +223,255 @@ export default function Index() {
                                 }
                                 label="English Word"
                                 fullWidth
-                                margin="normal"
+                                margin="dense"
                             />
+                            <Autocomplete
+                                value={englishWord.RelatedWords || []}
+                                multiple
+                                options={englishWords}
+                                getOptionLabel={(n) => n.word}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                renderInput={(params) => <TextField {...params} label="Related Words" variant="outlined" margin="dense" />}
+                                onChange={(event, value, reason) => {
+                                    handleRelatedWordsChanged(value);
+                                }}
+                            />
+                            {/* <Autocomplete
+                                value={englishWord.WordsRelatedTo || []}
+                                multiple
+                                options={englishWords}
+                                getOptionLabel={(n) => n.word}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                renderInput={(params) => <TextField {...params} label="Words Related To" variant="outlined" margin="dense" />}
+                                disabled
+                            /> */}
                         </div>
-                        <h3>Definitions</h3>
-                        {englishWord?.definitions.map((d, definitionIndex) => (
-                            <div
-                                className="p-2  rounded-md border-[1px] border-primary-500/30 max-w-md my-3"
-                                key={d.id}
-                            >
-                                <TextField
-                                    variant="outlined"
-                                    value={d.definition || ""}
-                                    onChange={(e) =>
-                                        handleDefinitionChaned(
-                                            e,
-                                            definitionIndex
-                                        )
-                                    }
-                                    label="English Definition"
-                                    fullWidth
-                                    margin="normal"
-                                />
-                                <TextField
-                                    variant="outlined"
-                                    value={d.partOfSpeech}
-                                    onChange={(e) =>
-                                        handlePartOfSpeechChanged(
-                                            e,
-                                            definitionIndex
-                                        )
-                                    }
-                                    label="Part of Speech"
-                                    fullWidth
-                                    margin="normal"
-                                    select
-                                >
-                                    {Object.keys(PartOfSpeech).map((n) => (
-                                        <MenuItem key={n} value={n}>
-                                            {n}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                                <h4 className="underline">
-                                    Michif Translation
-                                </h4>
-                                <TextField
-                                    variant="outlined"
-                                    value={d.MichifWords[0].Word || ""}
-                                    onChange={(e) =>
-                                        handleMichifWordChanged(
-                                            {
-                                                ...d.MichifWords[0],
-                                                Word: e.target.value,
-                                            },
-                                            definitionIndex
-                                        )
-                                    }
-                                    label="Michif"
-                                    fullWidth
-                                    margin="dense"
-                                />
-                                <TextField
-                                    variant="outlined"
-                                    value={
-                                        d.MichifWords[0].alternateSpellings ||
-                                        ""
-                                    }
-                                    onChange={(e) =>
-                                        handleMichifWordChanged(
-                                            {
-                                                ...d.MichifWords[0],
-                                                alternateSpellings:
-                                                    e.target.value,
-                                            },
-                                            definitionIndex
-                                        )
-                                    }
-                                    label="Alternate Spellings"
-                                    fullWidth
-                                    margin="dense"
-                                />
-                                <TextField
-                                    variant="outlined"
-                                    value={d.MichifWords[0].phonetic || ""}
-                                    onChange={(e) =>
-                                        handleMichifWordChanged(
-                                            {
-                                                ...d.MichifWords[0],
-                                                phonetic: e.target.value,
-                                            },
-                                            definitionIndex
-                                        )
-                                    }
-                                    label="Phonetic"
-                                    fullWidth
-                                    margin="dense"
-                                />
-                                <Autocomplete
-                                    value={d.MichifWords[0].RelatedWords || []}
-                                    multiple
-                                    options={michifWords}
-                                    getOptionLabel={(n) => n.Word}
-                                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                                    renderInput={(params) => (
+                        <h3>Translations</h3>
+                        {englishWord?.MichifWords.map((d, translationIndex) => (
+                            <div className="p-2 rounded-md border-[1px] container border-secondary-700/30 my-3 bg-primary-500/10" key={d.id}>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
                                         <TextField
-                                            {...params}
-                                            label="Related Words"
                                             variant="outlined"
+                                            value={d.word || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        word: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Michif Translation"
+                                            fullWidth
                                             margin="dense"
                                         />
-                                    )}
-                                    onChange={(event, value, reason) => {
-                                        handleMichifWordChanged(
-                                            {
-                                                ...d.MichifWords[0],
-                                                RelatedWords: value,
-                                            },
-                                            definitionIndex
-                                        );
-                                    }}
-                                />
-                                <Autocomplete
-                                    value={d.MichifWords[0].WordsRelatedTo || []}
-                                    multiple
-                                    options={michifWords}
-                                    getOptionLabel={(n) => n.Word}
-                                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                                    renderInput={(params) => (
                                         <TextField
-                                            {...params}
-                                            label="Words Related To"
                                             variant="outlined"
+                                            value={d.PartOfSpeech}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        PartOfSpeech: e.target.value as PartOfSpeech,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Part of Speech"
+                                            fullWidth
+                                            margin="dense"
+                                            select
+                                        >
+                                            {Object.keys(PartOfSpeech).map((n) => (
+                                                <MenuItem key={n} value={n}>
+                                                    {n}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.phonetic || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        phonetic: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Phonetic"
+                                            fullWidth
                                             margin="dense"
                                         />
-                                    )}
-                                    disabled
-                                />
+                                        <Autocomplete
+                                            value={d.Categories || []}
+                                            multiple
+                                            options={categories}
+                                            getOptionLabel={(n) => {
+                                                if (typeof n === "string") {
+                                                    return n;
+                                                }
+                                                return n.title;
+                                            }}
+                                            isOptionEqualToValue={(option, value) => option.title === value.title}
+                                            renderInput={(params) => <TextField {...params} label="Categories" variant="outlined" margin="dense" />}
+                                            freeSolo
+                                            filterOptions={(options, params) => {
+                                                const filtered = filter(options, params);
+
+                                                const { inputValue } = params;
+                                                const isExisting = options.some((option) => inputValue === option.title);
+                                                if (inputValue !== "" && !isExisting) {
+                                                    filtered.push({
+                                                        id: -1,
+                                                        title: `Create "${inputValue}"`,
+                                                        inputValue,
+                                                    });
+                                                }
+
+                                                return filtered;
+                                            }}
+                                            onChange={(event, value, reason) => {
+                                                if (typeof value === "string") {
+                                                    handleMichifWordChanged(
+                                                        {
+                                                            ...d,
+                                                            Categories: [{ id: -1, title: value }],
+                                                        },
+                                                        translationIndex
+                                                    );
+                                                } else {
+                                                    const parsed = value.map((n) => {
+                                                        if (typeof n === "string") {
+                                                            return { id: -1, title: n };
+                                                            //@ts-ignore
+                                                        } else if (n.inputValue) {
+                                                            //@ts-ignore
+                                                            return { id: -1, title: n.inputValue };
+                                                        } else {
+                                                            return n;
+                                                        }
+                                                    });
+                                                    handleMichifWordChanged(
+                                                        {
+                                                            ...d,
+                                                            Categories: parsed,
+                                                        },
+                                                        translationIndex
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.soundEmbedUrl || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        soundEmbedUrl: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Sound Embed URL"
+                                            fullWidth
+                                            margin="dense"
+                                        />
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.soundSpeaker || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        soundSpeaker: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Sound Speaker"
+                                            fullWidth
+                                            margin="dense"
+                                        />
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.soundLocation || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        soundLocation: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Sound Location"
+                                            fullWidth
+                                            margin="dense"
+                                        />
+                                        <DatePicker
+                                            label="Sound Date"
+                                            value={d.soundDate}
+                                            onChange={(newValue) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        soundDate: newValue,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            renderInput={(params) => <TextField {...params} margin="dense" fullWidth />}
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <h4 className="underline">Example Use</h4>
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.exampleSentenceEnglish || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        exampleSentenceEnglish: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="English"
+                                            fullWidth
+                                            margin="dense"
+                                        />
+                                        <TextField
+                                            variant="outlined"
+                                            value={d.exampleSentenceMichif || ""}
+                                            onChange={(e) =>
+                                                handleMichifWordChanged(
+                                                    {
+                                                        ...d,
+                                                        exampleSentenceMichif: e.target.value,
+                                                    },
+                                                    translationIndex
+                                                )
+                                            }
+                                            label="Michif"
+                                            fullWidth
+                                            margin="dense"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         ))}
-                        <input
-                            type="hidden"
-                            value={JSON.stringify(englishWord)}
-                            name="json"
-                        />
-                        <Button
-                            variant="outlined"
-                            onClick={handleAddDefinition}
-                        >
-                            Add Definition
+
+                        <input type="hidden" value={JSON.stringify(englishWord)} name="json" />
+                        <Button variant="outlined" onClick={handleAddTranslation}>
+                            Add Translation
                         </Button>
                         <Button type="submit" variant="outlined">
                             Save

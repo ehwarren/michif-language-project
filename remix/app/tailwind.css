@@ -787,6 +787,9 @@ div.text-block img {
 .grid-cols-12 {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .flex-col {
   flex-direction: column;
 }
@@ -810,6 +813,9 @@ div.text-block img {
 }
 .gap-4 {
   gap: 1rem;
+}
+.gap-2 {
+  gap: 0.5rem;
 }
 .space-y-1 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
@@ -846,8 +852,8 @@ div.text-block img {
 .border-\[1px\] {
   border-width: 1px;
 }
-.border-primary-500\/30 {
-  border-color: rgb(0 41 85 / 0.3);
+.border-secondary-700\/30 {
+  border-color: rgb(124 122 105 / 0.3);
 }
 .border-r-primary-500\/20 {
   border-right-color: rgb(0 41 85 / 0.2);
@@ -870,6 +876,9 @@ div.text-block img {
 .bg-primary-700 {
   --tw-bg-opacity: 1;
   background-color: rgb(0 25 51 / var(--tw-bg-opacity));
+}
+.bg-primary-500\/10 {
+  background-color: rgb(0 41 85 / 0.1);
 }
 .bg-gradient-to-br {
   background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));

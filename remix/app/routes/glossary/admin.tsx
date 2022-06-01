@@ -2,8 +2,8 @@ import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import {
+    Category,
     EnglishWord,
-    EnglishDefinition,
     MichifWord,
     PartOfSpeech,
 } from "@prisma/client";
@@ -15,20 +15,14 @@ import {
 import { MichifWordsContextProvider } from "~/utils/context/MichifWordContext";
 import WordSidebar from "~/components/admin/WordSidebar";
 
-type Word = (EnglishWord & {
-    definitions: (EnglishDefinition & {
-        MichifWords: (MichifWord & {
-            ExampleSentences: MichifWord[];
-        })[];
-    })[];
-})[];
-
 type AdminData = {
+    categories: Category[];
     englishWords: EnglishWord[];
     michifWords: MichifWord[];
 };
 export const loader: LoaderFunction = async (): Promise<AdminData> => {
     return {
+        categories: await prisma.category.findMany({}),
         englishWords: await prisma.englishWord.findMany({
             orderBy: { word: "asc" },
         }),

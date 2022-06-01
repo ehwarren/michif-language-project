@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "glossary_categories",
+  "info": {
+    "singularName": "glossary-category",
+    "pluralName": "glossary-categories",
+    "displayName": "Glossary Category"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "glossary_item": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::glossary-item.glossary-item",
+      "inversedBy": "glossary_categories"
+    }
+  }
+}

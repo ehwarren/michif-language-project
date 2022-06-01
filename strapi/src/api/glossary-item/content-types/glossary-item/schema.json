@@ -1,0 +1,95 @@
+{
+  "kind": "collectionType",
+  "collectionName": "glossary_items",
+  "info": {
+    "singularName": "glossary-item",
+    "pluralName": "glossary-items",
+    "displayName": "Glossary Items",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "English": {
+      "type": "string",
+      "unique": false,
+      "required": true
+    },
+    "Michif": {
+      "type": "string",
+      "required": true
+    },
+    "ExampleEnglish": {
+      "type": "string"
+    },
+    "ExampleMichif": {
+      "type": "string"
+    },
+    "glossary_categories": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::glossary-category.glossary-category",
+      "mappedBy": "glossary_item"
+    },
+    "PartOfSpeech": {
+      "type": "enumeration",
+      "enum": [
+        "Noun",
+        "Verb"
+      ]
+    },
+    "Note": {
+      "type": "string"
+    },
+    "glossary_items": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::glossary-item.glossary-item",
+      "inversedBy": "glossary_items_incoming"
+    },
+    "glossary_items_incoming": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::glossary-item.glossary-item",
+      "inversedBy": "glossary_items"
+    },
+    "VariantType": {
+      "type": "enumeration",
+      "enum": [
+        "Plural",
+        "Past Tense"
+      ]
+    },
+    "Phonetics": {
+      "type": "string"
+    },
+    "SoundUrl": {
+      "type": "string"
+    },
+    "SoundSpeaker": {
+      "type": "string"
+    },
+    "SoundLocation": {
+      "type": "string"
+    },
+    "SoundDate": {
+      "type": "date"
+    },
+    "French": {
+      "type": "string"
+    },
+    "Image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "Registrar": {
+      "type": "string"
+    }
+  }
+}

@@ -1,7 +1,6 @@
 import { LoaderFunction } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
 import { Form, Link, NavLink, Outlet, useLoaderData, useLocation, useSearchParams, useSubmit } from "@remix-run/react";
-import { EnglishWord, MichifWord } from "@prisma/client";
 import { Button, TextField } from "@mui/material";
 import { glossaryQuery } from "~/utils/queries/glossary/__generated__/glossaryQuery";
 import { GlossaryQuery, GlossarySearchQuery } from "~/utils/queries/glossary";
@@ -12,11 +11,6 @@ import {
     glossarySearchQuery_glossaryItems_data_attributes_glossary_categories_data,
 } from "~/utils/queries/glossary/__generated__/glossarySearchQuery";
 import { useEffect, useState } from "react";
-
-type Word = (EnglishWord & {
-    RelatedWords: EnglishWord[];
-    MichifWords: MichifWord[];
-})[];
 
 type MappedWords = { [key: string]: glossarySearchQuery_glossaryItems_data_attributes[] };
 

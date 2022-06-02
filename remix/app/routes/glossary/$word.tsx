@@ -1,7 +1,6 @@
 import { LoaderFunction } from "@remix-run/node";
 import { prisma } from "~/utils/prisma.server";
 import { Link, Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { EnglishWord, MichifWord } from "@prisma/client";
 import { Button } from "@mui/material";
 import { glossarySearchQuery, glossarySearchQueryVariables } from "~/utils/queries/glossary/__generated__/glossarySearchQuery";
 import { GlossarySearchQuery } from "~/utils/queries/glossary";

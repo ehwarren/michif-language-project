@@ -107,4 +107,4 @@ const GlossarySearchQuery = gql`
     }
 `;
 
-export { GlossaryQuery };
+export { GlossaryQuery, GlossarySearchQuery };

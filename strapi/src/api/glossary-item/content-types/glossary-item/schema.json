@@ -36,8 +36,15 @@
     "PartOfSpeech": {
       "type": "enumeration",
       "enum": [
-        "Noun",
-        "Verb"
+        "noun",
+        "verb",
+        "adverb",
+        "adjective",
+        "pronoun",
+        "preposition",
+        "interjection",
+        "conjunction",
+        "particle"
       ]
     },
     "Note": {
@@ -58,8 +65,11 @@
     "VariantType": {
       "type": "enumeration",
       "enum": [
-        "Plural",
-        "Past Tense"
+        "singular",
+        "plural",
+        "past tense",
+        "present tense",
+        "future tense"
       ]
     },
     "Phonetics": {
